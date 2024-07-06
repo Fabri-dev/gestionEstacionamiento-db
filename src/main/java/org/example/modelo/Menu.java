@@ -5,7 +5,9 @@ import org.example.Excepciones.DniNoExisteException;
 import org.example.Excepciones.NoHayDisponibilidadException;
 import org.example.Excepciones.PatenteNoExisteException;
 
+import java.awt.image.AreaAveragingScaleFilter;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 public class Menu {
@@ -30,9 +32,10 @@ public class Menu {
     public void menu()
     {
         String patenteAux,dniAux;
-        char opMenu = 0;
-        int opSw=0;
+        char opMenu;
+        int opSw=0,opIntAux;
         boolean flag;
+        ArrayList<Auto> listadoDeAutos;
         do {
             opcionesMenu();
             opSw= scanner.nextInt();
@@ -61,6 +64,8 @@ public class Menu {
                     System.out.println("Ingrese la patente del vehiculo: ");
                     scanner.nextLine();
                     patenteAux= scanner.nextLine();
+                    patenteAux= patenteAux.toUpperCase();
+
                     try {
 
                         flag= estacionamiento.eliminarUnAuto(dniAux,patenteAux);
@@ -79,26 +84,46 @@ public class Menu {
                     //Modificar un auto
                     System.out.println("Modificar un auto");
 
+                    System.out.println("Ingrese la patente del auto que quiere modificar");
+
                     break;
                 case 4:
                     //Ver registro de autos
                     System.out.println("Obtener un registro de autos");
                     System.out.println("""
-                            1. Activos (Actualmente en el estacionamiento)
-                            2. Inactivos (Se fueron del estacionamiento)
+                            1. Todos (Activos e inactivos)
+                            2. Activos (Actualmente en el estacionamiento)
+                            3. Inactivos (Se fueron del estacionamiento)
                             """);
+                    opIntAux= scanner.nextInt();
+                    listadoDeAutos= opcionesGenerarRegistro(opIntAux);
+
+                    if (listadoDeAutos != null)
+                    {
+                        System.out.println("Listado de autos: \n"+listadoDeAutos);
+                    }
+                    else {
+                        System.out.println("Lista vacia");
+                    }
+
                     break;
                 case 5:
                     System.out.println("Precio x hora anterior: "+ getEstacionamiento().getPrecioXHora());
                     System.out.println("Ingrese el nuevo precio x hora: ");
                     estacionamiento.setPrecioXHora(scanner.nextDouble());
                     break;
+                case 6:
+                    System.out.println("Hay: "+ estacionamiento.getCantAutosEstacionados()+" auto/s estacionado/s");
+                    int espaciosLibres=estacionamiento.getDisponibilidad() - estacionamiento.getCantAutosEstacionados();
+                    System.out.println("Tiene: "+ espaciosLibres +" espacio/s libre/s");
+                    break;
                 default:
-
+                    System.out.println("Ingrese una opcion valida");
                     break;
             }
 
             System.out.println("Desea continuar? s/n");
+            scanner.nextLine();
             opMenu= scanner.nextLine().charAt(0);
 
         }while (opMenu== 's');
@@ -182,13 +207,48 @@ public class Menu {
                 2. Sacar un auto
                 3. Modificar un auto
                 4. Ver registro de autos
-                5. Cambiar el precio x hora""");
+                5. Cambiar el precio x hora
+                6. Espacio libre disponible en el estacionamiento""");
         System.out.println("---------------------------------------------------");
         System.out.println("Que funcion desea hacer?: ");
 
     }
 
+    public ArrayList<Auto> opcionesGenerarRegistro(int opcionElegida){
+        ArrayList<Auto> autoArrayList= new ArrayList<>();
+        switch (opcionElegida)
+        {
+            case 1:
+                //todos
+                autoArrayList= estacionamiento.listarEstacionamiento();
+                try {
+                    autoArrayList.addAll(estacionamiento.listarAutosInactivosDB());
+                } catch (SQLException e) {
+                    System.out.println("Error con BD");
+                    e.printStackTrace();
+                }
+                break;
+            case 2:
+                //activos
+                autoArrayList= estacionamiento.listarEstacionamiento();
+                break;
+            case 3:
+                //inactivos
+                try {
+                    autoArrayList= estacionamiento.listarAutosInactivosDB();
+                } catch (SQLException e) {
+                    System.out.println("Error con BD");
+                    e.printStackTrace();
+                }
+                break;
+            default:
+                System.out.println("Elija una opcion valida");
+                autoArrayList= null;
+                break;
+        }
+    return autoArrayList;
 
+    }
 
 
 }

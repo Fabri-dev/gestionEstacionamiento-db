@@ -7,7 +7,6 @@ import org.example.Excepciones.PatenteNoExisteException;
 import org.example.dbManager.DbManager;
 
 import java.sql.SQLException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -41,7 +40,7 @@ public class Estacionamiento {
         dbManager= new DbManager();
         this.cantAutosEstacionados = 0;
         this.direccion = direccion;
-        this.disponibilidad = disponibilidad;
+        this.disponibilidad = disponibilidad; // la disponibilidad es el tamanio del estacionamiento. Ej: 20 de disp, Hay 20 espacios
         this.nombreEstacionamiento = nombreEstacionamiento;
         this.precioXHora = precioXHora;
         cargarAutosDeLaBD();
@@ -80,8 +79,9 @@ public class Estacionamiento {
 
     //metodos
 
-    private void iniciarListaDeAutos()
+    private void iniciarMapaDeAutos()
     {
+        //inicio la lista con todos los espacios vacios
         autos= new HashMap<>();
 
         //i=1 debido que no va a haber un nro de estacionamiento 0
@@ -93,12 +93,28 @@ public class Estacionamiento {
 
     private void cargarAutosDeLaBD()
     {
-        iniciarListaDeAutos();
+        //cargo el mapa de autos en el lugar correspondiente
+        iniciarMapaDeAutos();
         try {
             autos= dbManager.obtenerMapaDeAutosActivos(autos);
+
+            cantAutosEstacionados=calcularAutosEstacionados(autos);
+
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int calcularAutosEstacionados(HashMap<Integer,Auto> autoHashMap){
+        //aca cuento los autos que estan ocupando un espacio para el atributo
+        int resultado=0;
+
+        for (Map.Entry<Integer,Auto> autoEntry: autos.entrySet()){
+            if (autoEntry.getValue() != null){
+                resultado++;
+            }
+        }
+        return resultado;
     }
 
 
@@ -266,10 +282,12 @@ public class Estacionamiento {
 
             //lo cambio de tabla en la BD
             System.out.println("actualizando db");
-            dbManager.moverUnAutoAInactivoDB(autoAux);
+            flag= dbManager.moverUnAutoAInactivoDB(autoAux);
 
             System.out.println("Dejando el lugar vacio");
             autos.replace(autoAux.getNumeroDeEstacionamiento(),null);
+            cantAutosEstacionados--;
+            disponibilidad++;
         }
 
 
@@ -389,7 +407,9 @@ public class Estacionamiento {
 
         for(Map.Entry<Integer,Auto> autoSet: autos.entrySet())
         {
-            listaAutos.add(autoSet.getValue());
+            if (autoSet.getValue() != null){
+                listaAutos.add(autoSet.getValue());
+            }
         }
         return listaAutos;
     }
@@ -397,9 +417,9 @@ public class Estacionamiento {
 
 
 
-    private void leerAutosDB()
-    {
+    public ArrayList<Auto> listarAutosInactivosDB() throws SQLException {
         //leo todos los autos desde la DB
+        return dbManager.obtenerListadoDeAutosInactivos();
     }
 
 

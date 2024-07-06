@@ -4,6 +4,7 @@ import org.example.modelo.Auto;
 
 import java.sql.*;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 
 //todo: EL DB MANAGER SIRVE PARA GUARDAR UN HISTORIAL DE TODOS LOS AUTOS QUE ESTUVIERON EN EL ESTACIONAMIENTO
@@ -202,8 +203,6 @@ public class DbManager {
     }
 
     public HashMap<Integer,Auto> obtenerMapaDeAutosActivos(HashMap<Integer,Auto> mapaInicializado) throws SQLException {
-
-
         Auto autoAux=null;
 
         try(Connection connection= retornarConexionConBD()) {
@@ -234,6 +233,39 @@ public class DbManager {
 
         return mapaInicializado;
     }
+
+    public ArrayList<Auto> obtenerListadoDeAutosInactivos() throws SQLException {
+        ArrayList<Auto> listadoDeAutos=new ArrayList<>();
+        Auto autoAux=null;
+
+        try(Connection connection= retornarConexionConBD()) {
+            try(Statement statement= connection.createStatement()){
+                ResultSet resultSet= statement.executeQuery("SELECT * FROM `autos_inactivos`");
+                while (resultSet.next())
+                {
+                    //el metodo .toLocalDateTime traduce el tipo de dato TimeStamp a LocalDateTime, de todas formas es el mismo pero en distinto lenguaje
+                    autoAux=new Auto(resultSet.getString("color"),
+                            resultSet.getString("dniCliente"),
+                            resultSet.getBoolean("estado"),
+                            resultSet.getTimestamp("fechaDeEntrada").toLocalDateTime(),
+                            resultSet.getTimestamp("fechaDeSalida").toLocalDateTime(),
+                            resultSet.getInt("idAuto"),
+                            resultSet.getString("marca"),
+                            resultSet.getString("modelo"),
+                            resultSet.getInt("numeroDeEstacionamiento"),
+                            resultSet.getString("patente"),
+                            resultSet.getString("tipoDeVehiculo")
+                    );
+
+                    listadoDeAutos.add(autoAux);
+
+                }
+            }
+        }
+
+        return listadoDeAutos;
+    }
+
 
     public void realizarUnaQuery(String sqlQuery)throws SQLException{
 

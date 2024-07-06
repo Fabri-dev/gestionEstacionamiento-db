@@ -21,7 +21,7 @@ public class Main {
 
         //menu
         menu.menu();
-        DbManager dbManager= new DbManager();
+        //DbManager dbManager= new DbManager();
 
 //
 //        dbManager.realizarUnaQuery("ALTER TABLE autos ADD estado BOOLEAN;");
