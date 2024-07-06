@@ -4,6 +4,7 @@ import org.example.Excepciones.AutoYaExisteException;
 import org.example.Excepciones.DniNoExisteException;
 import org.example.Excepciones.NoHayDisponibilidadException;
 import org.example.Excepciones.PatenteNoExisteException;
+import org.example.log.Milogger;
 
 import java.awt.image.AreaAveragingScaleFilter;
 import java.sql.SQLException;
@@ -33,7 +34,7 @@ public class Menu {
     {
         String patenteAux,dniAux;
         char opMenu;
-        int opSw=0,opIntAux;
+        int opSw=0,opIntAux,auxInt;
         boolean flag;
         ArrayList<Auto> listadoDeAutos;
         do {
@@ -42,14 +43,27 @@ public class Menu {
             switch (opSw)
             {
                 case 1:
-
                     try {
-                        agregarUnAutoAEstacionamiento();
+                        auxInt= agregarUnAutoAEstacionamiento();
+                        if (auxInt != -1){
+                            System.out.println("Auto agregado con exito!, el numero de estacionamiento del auto es: " + auxInt);
+                            Milogger.escribirLog("Auto agregado con exito!, el numero de estacionamiento del auto es: " + auxInt);
+                        }else {
+                            System.out.println("No se pudo agregar el auto al estacionamiento :(");
+                            Milogger.escribirLog("Error: No se pudo agregar el auto al estacionamiento ");
+                        }
+
                     } catch (SQLException e) {
+                        Milogger.escribirLog("Error con la BD");
                         System.out.println(e.getMessage());
                     } catch (NoHayDisponibilidadException e) {
+
+                        Milogger.escribirLog(e.getMessage());
                         System.out.println(e.getMessage());
+
                     } catch (AutoYaExisteException e) {
+
+                        Milogger.escribirLog(e.getMessage());
                         System.out.println(e.getMessage());
                     }
 
@@ -130,19 +144,18 @@ public class Menu {
 
     }
 
-    private void agregarUnAutoAEstacionamiento() throws SQLException, NoHayDisponibilidadException, AutoYaExisteException {
+    private int agregarUnAutoAEstacionamiento() throws SQLException, NoHayDisponibilidadException, AutoYaExisteException {
         boolean flag=false;
+        int nroDeEstacionamientoDelAutoNuevo=-1;
         Auto autoAux= cargarUnAuto();
         flag= estacionamiento.agregarUnAuto(autoAux);
 
         if (flag)
         {
-            System.out.println("Auto agregado con exito!, el numero de estacionamiento del auto es: "+ autoAux.getNumeroDeEstacionamiento());
-        }
-        else {
-            System.out.println("No se pudo agregar el auto al estacionamiento :(");
+            nroDeEstacionamientoDelAutoNuevo = autoAux.getNumeroDeEstacionamiento();
         }
 
+        return nroDeEstacionamientoDelAutoNuevo;
     }
 
     public Auto cargarUnAuto(){
