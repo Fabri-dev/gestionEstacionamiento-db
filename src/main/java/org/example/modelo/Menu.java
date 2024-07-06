@@ -83,12 +83,20 @@ public class Menu {
                     try {
 
                         flag= estacionamiento.eliminarUnAuto(dniAux,patenteAux);
+                        Milogger.escribirLog("Auto con patente: "+patenteAux+"y dni del cliente: "+dniAux+ " se fue del estacionamiento.");
                         System.out.println("se elimino: "+flag);
                     } catch (DniNoExisteException e) {
+
+                        Milogger.escribirLog("Se ingreso un dni que no existe en el sistema para intentar sacar un auto del estacionamiento.");
                         System.out.println(e.getMessage());
+
                     } catch (PatenteNoExisteException e) {
+
+                        Milogger.escribirLog("Se ingreso una patente que no existe en el sistema para intentar sacar un auto del estacionamiento.");
                         System.out.println(e.getMessage());
                     } catch (SQLException e) {
+
+                        Milogger.escribirLog("Error con la BD al eliminar un auto");
                         System.out.println(e.getMessage());
                     }
 
@@ -115,11 +123,11 @@ public class Menu {
                     if (listadoDeAutos != null)
                     {
                         System.out.println("Listado de autos: \n"+listadoDeAutos);
+
                     }
                     else {
                         System.out.println("Lista vacia");
                     }
-
                     break;
                 case 5:
                     System.out.println("Precio x hora anterior: "+ getEstacionamiento().getPrecioXHora());
@@ -237,20 +245,25 @@ public class Menu {
                 try {
                     autoArrayList.addAll(estacionamiento.listarAutosInactivosDB());
                 } catch (SQLException e) {
+                    Milogger.escribirLog("Error con BD al intentar hacer un listado de todos los autos");
                     System.out.println("Error con BD");
                     e.printStackTrace();
                 }
+                Milogger.escribirLog("Se creo un listado de todos los autos.");
                 break;
             case 2:
                 //activos
                 autoArrayList= estacionamiento.listarEstacionamiento();
+                Milogger.escribirLog("Se creo un listado de los autos activos.");
                 break;
             case 3:
                 //inactivos
                 try {
                     autoArrayList= estacionamiento.listarAutosInactivosDB();
+                    Milogger.escribirLog("Se creo un listado de los autos inactivos.");
                 } catch (SQLException e) {
                     System.out.println("Error con BD");
+                    Milogger.escribirLog("Error con BD al intentar hacer un listado de los autos inactivos");
                     e.printStackTrace();
                 }
                 break;

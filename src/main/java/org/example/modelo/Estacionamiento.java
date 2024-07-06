@@ -1,9 +1,6 @@
 package org.example.modelo;
 
-import org.example.Excepciones.AutoYaExisteException;
-import org.example.Excepciones.DniNoExisteException;
-import org.example.Excepciones.NoHayDisponibilidadException;
-import org.example.Excepciones.PatenteNoExisteException;
+import org.example.Excepciones.*;
 import org.example.dbManager.DbManager;
 
 import java.sql.SQLException;
@@ -118,7 +115,7 @@ public class Estacionamiento {
     }
 
 
-    public boolean agregarUnAuto(Auto nuevoAuto) throws NoHayDisponibilidadException, AutoYaExisteException, SQLException {
+    public boolean agregarUnAuto(Auto nuevoAuto) throws NoHayDisponibilidadException, SQLException, PatenteYaExisteException, DniYaExisteException {
         //se agrega tanto al hashmap como a la DB
         boolean flag=false;
         int espacio=0;
@@ -136,11 +133,13 @@ public class Estacionamiento {
         }
 
         //segundo tengo que buscar si el auto no es el mismo que alguno de los estacionados(patente y dnicliente)
-        System.out.println(nuevoAuto);
-        if (autoExiste(nuevoAuto))
+        if (autoExisteXPatente(nuevoAuto.getPatente()))
         {
-            System.out.println("El auto recibido ya existe");
-            throw new AutoYaExisteException();
+            throw new PatenteYaExisteException();
+        }
+        if (autoExisteXDni(nuevoAuto.getDniCliente()))
+        {
+            throw new DniYaExisteException();
         }
 
         //tercero tengo que buscar un espacio vacio (un valor nulo en el mapa)
