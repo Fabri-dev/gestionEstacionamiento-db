@@ -1,10 +1,13 @@
 package org.example.modelo;
 
 import org.example.Excepciones.AutoYaExisteException;
+import org.example.Excepciones.DniNoExisteException;
 import org.example.Excepciones.NoHayDisponibilidadException;
+import org.example.Excepciones.PatenteNoExisteException;
 import org.example.dbManager.DbManager;
 
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,7 +20,7 @@ public class Estacionamiento {
     private double precioXHora;
     private String nombreEstacionamiento;
     private String direccion;
-    private HashMap<Integer,Auto> autos;
+    private HashMap<Integer,Auto> autos; //Int= nroEstacionamiento
     private DbManager dbManager;
 
 
@@ -25,23 +28,23 @@ public class Estacionamiento {
 
     public Estacionamiento()
     {
+        dbManager= new DbManager();
         cantAutosEstacionados = 0;
         direccion = null;
         disponibilidad = 0;
         nombreEstacionamiento = null;
         precioXHora = 0;
-        iniciarListaDeAutos();
-        dbManager= new DbManager();
+        cargarAutosDeLaBD();
     }
 
     public Estacionamiento(String direccion, int disponibilidad, String nombreEstacionamiento, double precioXHora) {
+        dbManager= new DbManager();
         this.cantAutosEstacionados = 0;
         this.direccion = direccion;
         this.disponibilidad = disponibilidad;
         this.nombreEstacionamiento = nombreEstacionamiento;
         this.precioXHora = precioXHora;
-        iniciarListaDeAutos();
-        dbManager= new DbManager();
+        cargarAutosDeLaBD();
     }
 
     //get y set
@@ -81,6 +84,7 @@ public class Estacionamiento {
     {
         autos= new HashMap<>();
 
+        //i=1 debido que no va a haber un nro de estacionamiento 0
         for(int i=1; i <= disponibilidad; i++)
         {
             autos.put(i,null);
@@ -89,7 +93,12 @@ public class Estacionamiento {
 
     private void cargarAutosDeLaBD()
     {
-
+        iniciarListaDeAutos();
+        try {
+            autos= dbManager.obtenerMapaDeAutosActivos(autos);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -131,8 +140,15 @@ public class Estacionamiento {
 
             cantAutosEstacionados++;
 
-            //si tira excepcion se arroja sola
-            dbManager.agregarUnAuto(nuevoAuto);
+            try {
+                //si tira excepcion se arroja sola de todas formas
+
+                dbManager.agregarUnAutoActivoDB(nuevoAuto);
+
+            }catch (SQLException e)
+            {
+                throw e;
+            }
 
             flag=true;
 
@@ -141,6 +157,8 @@ public class Estacionamiento {
 
         return flag;
     }
+
+
 
     public int retonarEspacioLibreEnEstacionamiento(){
         int espacioLibre=-1;
@@ -179,21 +197,181 @@ public class Estacionamiento {
         return flag;
     }
 
+    public boolean autoExisteXDni(String dniRecibido){
+        boolean flag=false;
+        Iterator<Map.Entry<Integer,Auto>>iterator= getAutos().entrySet().iterator();
+        Auto autoAux;
 
+        while (iterator.hasNext() && !flag){
 
-    public boolean eliminarUnAuto(String dniCliente, String patente)
-    {
+            autoAux= iterator.next().getValue();
+            //si el lugar no esta vacio
+            if (autoAux != null)
+            {
+
+                if (autoAux.getDniCliente().equals(dniRecibido))
+                {
+
+                    flag=true;
+                }
+            }
+        }
+        return flag;
+    }
+
+    public boolean autoExisteXPatente(String patenteRecibida){
+        boolean flag=false;
+        Iterator<Map.Entry<Integer,Auto>>iterator= getAutos().entrySet().iterator();
+        Auto autoAux;
+        while (iterator.hasNext() && !flag){
+            autoAux= iterator.next().getValue();
+            //si el lugar no esta vacio
+            if (autoAux != null)
+            {
+                if (autoAux.getPatente().equals(patenteRecibida))
+                {
+
+                    flag=true;
+                }
+
+            }
+        }
+        return flag;
+    }
+
+    public boolean eliminarUnAuto(String dniClienteRecibido, String patenteRecibida) throws DniNoExisteException, PatenteNoExisteException, SQLException {
         //se elimina el auto del hashmap pero queda en la BD
         boolean flag=false;
+        Auto autoAux=null;
 
-        //primero tengo que verificar si existe el auto en el estacionamiento
-        //if (autoExiste())
+        //primero tengo que verificar si existe el auto en el estacionamiento(osea los activos)
+        //verifico si el dni existe
+        if (!autoExisteXDni(dniClienteRecibido))
+        {
+            throw new DniNoExisteException(dniClienteRecibido);
+        }
 
+        //verifico si la patente existe
+        if (!autoExisteXPatente(patenteRecibida))
+        {
+            throw new PatenteNoExisteException(patenteRecibida);
+        }
+
+        //si el auto existe, lo busco y lo elimino del hashmap pero lo muevo de tabla con estado inactivo en la BD
+
+        autoAux= buscarUnAutoXPatente(patenteRecibida);
+
+        if (autoAux != null)
+        {
+
+            //lo cambio de tabla en la BD
+            System.out.println("actualizando db");
+            dbManager.moverUnAutoAInactivoDB(autoAux);
+
+            System.out.println("Dejando el lugar vacio");
+            autos.replace(autoAux.getNumeroDeEstacionamiento(),null);
+        }
 
 
 
 
         return flag;
+    }
+
+    public Auto buscarUnAutoXDniCliente(String dniClienteRecibido)
+    {
+        Auto autoAux,autoARetornar=null;
+        boolean flag=false;
+        Iterator<Map.Entry<Integer,Auto>> iterator= autos.entrySet().iterator();
+
+
+        //lo busco si existe
+        if (autoExisteXDni(dniClienteRecibido))
+        {
+            //recorro el mapa
+            while (iterator.hasNext() && !flag)
+            {
+                //obtengo el espacio del estacionamiento
+                autoAux= iterator.next().getValue();
+
+                //si el espacio NO esta vacio
+                if (autoAux != null)
+                {
+                    if (autoAux.getDniCliente().equals(dniClienteRecibido))
+                    {
+                        autoARetornar=autoAux;
+                        flag=true;
+                    }
+                }
+            }
+
+        }
+
+        //si no existe se retorna null
+        return autoARetornar;
+    }
+
+    public Auto buscarUnAutoXPatente(String patenteRecibida)
+    {
+        Auto autoAux,autoARetornar=null;
+        boolean flag=false;
+        Iterator<Map.Entry<Integer,Auto>> iterator= autos.entrySet().iterator();
+
+
+        //lo busco si existe
+        if (autoExisteXPatente(patenteRecibida))
+        {
+            //recorro el mapa
+            while (iterator.hasNext() && !flag)
+            {
+                //obtengo el espacio del estacionamiento
+                autoAux= iterator.next().getValue();
+
+                //si el espacio NO esta vacio
+                if (autoAux != null)
+                {
+                    if (autoAux.getPatente().equals(patenteRecibida))
+                    {
+                        autoARetornar=autoAux;
+                        flag=true;
+                    }
+                }
+            }
+
+        }
+
+        //si no existe se retorna null
+        return autoARetornar;
+    }
+
+    public Auto buscarUnAutoXId(int idAutoRecibido)
+    {
+        Auto autoAux,autoARetornar=null;
+        boolean flag=false;
+        Iterator<Map.Entry<Integer,Auto>> iterator= autos.entrySet().iterator();
+
+
+        //recorro el mapa
+        while (iterator.hasNext() && !flag)
+        {
+            //obtengo el espacio del estacionamiento
+            autoAux= iterator.next().getValue();
+
+            //si el espacio NO esta vacio
+            if (autoAux != null)
+            {
+                if (autoAux.getIdAuto() == idAutoRecibido)
+                {
+                    autoARetornar=autoAux;
+                    flag=true;
+                }
+            }
+        }
+
+
+
+        //si no existe se retorna null
+        return autoARetornar;
     }
 
     public boolean modificarUnAuto()

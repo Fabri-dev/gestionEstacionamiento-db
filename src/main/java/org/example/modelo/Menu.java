@@ -1,12 +1,11 @@
 package org.example.modelo;
 
 import org.example.Excepciones.AutoYaExisteException;
+import org.example.Excepciones.DniNoExisteException;
 import org.example.Excepciones.NoHayDisponibilidadException;
+import org.example.Excepciones.PatenteNoExisteException;
 
 import java.sql.SQLException;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Scanner;
 
 public class Menu {
@@ -30,10 +29,10 @@ public class Menu {
 
     public void menu()
     {
-
+        String patenteAux,dniAux;
         char opMenu = 0;
         int opSw=0;
-
+        boolean flag;
         do {
             opcionesMenu();
             opSw= scanner.nextInt();
@@ -43,9 +42,6 @@ public class Menu {
 
                     try {
                         agregarUnAutoAEstacionamiento();
-
-
-
                     } catch (SQLException e) {
                         System.out.println(e.getMessage());
                     } catch (NoHayDisponibilidadException e) {
@@ -58,17 +54,39 @@ public class Menu {
                 case 2:
                     System.out.println("Sacar un auto del estacionamiento");
 
+                    System.out.println("Ingrese el dni del cliente: ");
+                    scanner.nextLine();
+                    dniAux= scanner.nextLine();
 
                     System.out.println("Ingrese la patente del vehiculo: ");
-                    System.out.println("Ingrese el dni del cliente: ");
+                    scanner.nextLine();
+                    patenteAux= scanner.nextLine();
+                    try {
 
-                    //estacionamiento.eliminarUnAuto()
+                        flag= estacionamiento.eliminarUnAuto(dniAux,patenteAux);
+                        System.out.println("se elimino: "+flag);
+                    } catch (DniNoExisteException e) {
+                        System.out.println(e.getMessage());
+                    } catch (PatenteNoExisteException e) {
+                        System.out.println(e.getMessage());
+                    } catch (SQLException e) {
+                        System.out.println(e.getMessage());
+                    }
 
 
                     break;
                 case 3:
+                    //Modificar un auto
+                    System.out.println("Modificar un auto");
+
                     break;
                 case 4:
+                    //Ver registro de autos
+                    System.out.println("Obtener un registro de autos");
+                    System.out.println("""
+                            1. Activos (Actualmente en el estacionamiento)
+                            2. Inactivos (Se fueron del estacionamiento)
+                            """);
                     break;
                 case 5:
                     System.out.println("Precio x hora anterior: "+ getEstacionamiento().getPrecioXHora());
@@ -88,15 +106,36 @@ public class Menu {
     }
 
     private void agregarUnAutoAEstacionamiento() throws SQLException, NoHayDisponibilidadException, AutoYaExisteException {
+        boolean flag=false;
+        Auto autoAux= cargarUnAuto();
+        flag= estacionamiento.agregarUnAuto(autoAux);
+
+        if (flag)
+        {
+            System.out.println("Auto agregado con exito!, el numero de estacionamiento del auto es: "+ autoAux.getNumeroDeEstacionamiento());
+        }
+        else {
+            System.out.println("No se pudo agregar el auto al estacionamiento :(");
+        }
+
+    }
+
+    public Auto cargarUnAuto(){
         Auto autoAux= new Auto();
-        boolean flag;
         String dniAux,patenteAux;
+        boolean flag;
+
         do {
             System.out.println("Ingrese el DNI del cliente: ");
             scanner.nextLine();
             dniAux= scanner.nextLine();
+            flag=estacionamiento.autoExisteXDni(dniAux);
+            if (flag)
+            {
+                System.out.println("Dni ya existe. Ingrese otro");
+            }
 
-        }while (dniExiste(dniAux));
+        }while (flag);
 
         autoAux.setDniCliente(dniAux);
 
@@ -105,8 +144,13 @@ public class Menu {
             System.out.println("Ingrese la patente del auto: ");
             scanner.nextLine();
             patenteAux= scanner.nextLine();
+            flag=estacionamiento.autoExisteXPatente(patenteAux);
+            if (flag)
+            {
+                System.out.println("Patente ya existe. Ingrese otra");
+            }
 
-        }while (patenteExiste(patenteAux));
+        }while (flag);
 
         autoAux.setPatente(patenteAux);
 
@@ -124,57 +168,9 @@ public class Menu {
         scanner.nextLine();
         autoAux.setTipoDeVehiculo(scanner.nextLine());
 
-
-        flag= estacionamiento.agregarUnAuto(autoAux);
-
-        if (flag)
-        {
-            System.out.println("Auto agregado con exito!, el numero de estacionamiento del auto es: "+ autoAux.getNumeroDeEstacionamiento());
-        }
-        else {
-            System.out.println("No se pudo agregar el auto al estacionamiento :(");
-        }
+        return autoAux;
 
     }
-
-    public boolean dniExiste(String dniRecibido){
-        boolean flag=false;
-        Iterator<Map.Entry<Integer,Auto>>iterator= estacionamiento.getAutos().entrySet().iterator();
-        Auto autoAux;
-        while (iterator.hasNext() && !flag){
-            autoAux= iterator.next().getValue();
-            //si el lugar no esta vacio
-            if (autoAux != null)
-            {
-                if (autoAux.getDniCliente() == dniRecibido)
-                {
-                    flag=true;
-                }
-            }
-        }
-        return flag;
-    }
-
-    public boolean patenteExiste(String patenteRecibida){
-        boolean flag=false;
-        Iterator<Map.Entry<Integer,Auto>>iterator= estacionamiento.getAutos().entrySet().iterator();
-        Auto autoAux;
-        while (iterator.hasNext() && !flag){
-            autoAux= iterator.next().getValue();
-            //si el lugar no esta vacio
-            if (autoAux != null)
-            {
-                if (autoAux.getPatente() == patenteRecibida)
-                {
-                    flag=true;
-                }
-
-            }
-        }
-        return flag;
-    }
-
-
 
     public void opcionesMenu(){
 
