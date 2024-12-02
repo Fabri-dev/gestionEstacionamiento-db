@@ -1,9 +1,6 @@
 package org.example.modelo;
 
-import org.example.Excepciones.AutoYaExisteException;
-import org.example.Excepciones.DniNoExisteException;
-import org.example.Excepciones.NoHayDisponibilidadException;
-import org.example.Excepciones.PatenteNoExisteException;
+import org.example.Excepciones.*;
 import org.example.log.Milogger;
 
 import java.awt.image.AreaAveragingScaleFilter;
@@ -56,13 +53,20 @@ public class Menu {
                     } catch (SQLException e) {
                         Milogger.escribirLog("Error con la BD");
                         System.out.println(e.getMessage());
-                    } catch (NoHayDisponibilidadException e) {
 
+                    } catch (NoHayDisponibilidadException e) {
                         Milogger.escribirLog(e.getMessage());
                         System.out.println(e.getMessage());
 
                     } catch (AutoYaExisteException e) {
+                        Milogger.escribirLog(e.getMessage());
+                        System.out.println(e.getMessage());
 
+                    } catch (PatenteYaExisteException e) {
+                        Milogger.escribirLog(e.getMessage());
+                        System.out.println(e.getMessage());
+
+                    } catch (DniYaExisteException e) {
                         Milogger.escribirLog(e.getMessage());
                         System.out.println(e.getMessage());
                     }
@@ -108,6 +112,8 @@ public class Menu {
 
                     System.out.println("Ingrese la patente del auto que quiere modificar");
 
+
+
                     break;
                 case 4:
                     //Ver registro de autos
@@ -152,10 +158,12 @@ public class Menu {
 
     }
 
-    private int agregarUnAutoAEstacionamiento() throws SQLException, NoHayDisponibilidadException, AutoYaExisteException {
+    private int agregarUnAutoAEstacionamiento() throws SQLException, NoHayDisponibilidadException, AutoYaExisteException, PatenteYaExisteException, DniYaExisteException {
         boolean flag=false;
         int nroDeEstacionamientoDelAutoNuevo=-1;
         Auto autoAux= cargarUnAuto();
+
+
         flag= estacionamiento.agregarUnAuto(autoAux);
 
         if (flag)
